@@ -1,0 +1,45 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+	<h1>Data for Deals</h1>
+        <h4> The average value for won deals the past year: {{ averageValue }}</h4>
+<!-- Gör en factory metod som skapar kort, tar in sets... hur ska man hitta namn?-->
+        <div class="card-group">
+		<div class="card">
+        <h5 class="card-title">  Customers</h5>
+		  <img style="width: 200px;">
+		  <div class="card-body">
+              {% for customer in customers %}
+		    <p class="card-text">{{ customer }}</p>
+              {% endfor %}
+		  </div>
+		</div>
+	</div>
+
+    <div class="card-group">
+		<div class="card">
+        <h5 class="card-title">  Prospects</h5>
+		  <img style="width: 200px;">
+		  <div class="card-body">
+              {% for prospect in prospects %}
+		    <p class="card-text">{{ prospect }}</p>
+              {% endfor %}
+		  </div>
+		</div>
+	</div>
+
+    <div class="card-group">
+		<div class="card">
+        <h5 class="card-title">  Inactive Companies</h5>
+		  <img style="width: 200px;">
+		  <div class="card-body">
+              {% for inactive in inactives %}
+		    <p class="card-text">{{ inactive }}</p>
+              {% endfor %}
+		  </div>
+		</div>
+	</div>
+
+	<br>
+{% endblock %}
