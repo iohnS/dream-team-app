@@ -120,6 +120,7 @@ def example():
 
     boughtThePastYear = getCustomers()
 
+
     def getInactive():
         base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/deal/"
         params = "?_limit=50&probability=1.0&max-closeddate=2020-11-08T23:59Z"
@@ -148,13 +149,15 @@ def example():
 
     fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
 
-    ax1.bar(dealsPerMonth().keys(), dealsPerMonth().values())
+    dealsPerMonth = dealsPerMonth()
+    ax1.bar(dealsPerMonth.keys(), dealsPerMonth.values())
     ax1.legend()
     ax1.set_title("Deals Per Month")
     ax1.set_ylabel("Number of deals")
     ax1.set_xlabel("Month")
 
-    ax2.bar(valuePerCustomer(response_deals).keys(), valuePerCustomer(response_deals).values())
+    valuePerCustomer = valuePerCustomer(response_deals)
+    ax2.bar(valuePerCustomer.keys(), valuePerCustomer.values())
     ax2.legend()
     ax2.set_title("Value Per Customer")
     ax2.set_ylabel("Value in kr")
