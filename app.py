@@ -61,7 +61,6 @@ def example():
 
     # Example of API call to get deals
     base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/deal/"
-    #https://api-test.lime-crm.com/client/table-view/deal
     params = "?probability=1.0&min-closeddate=2020-11-08T23:59Z&max-closeddate=2021-11-08T23:59Z"
     url = base_url + params
     response_deals = get_api_data(headers=headers, url=url)
@@ -73,8 +72,6 @@ def example():
             totalvalue += d["value"]
 
         return totalvalue/len(response_deals)
-
-    #print(averageValue())
 
     def dealsPerMonth():
         monthDict = dict.fromkeys(calendar.month_name[1:13], 0)
@@ -96,20 +93,21 @@ def example():
         companyIDs = getIDs(response_all)
         IDNameDict = {}
         for companyID in companyIDs:
-            first = next(x for x in response_all if x["company"] == companyID)
-            company_url = first["_links"]["relation_company"]["href"]
+            firstMatch = next(x for x in response_all if x["company"] == companyID)
+            company_url = firstMatch["_links"]["relation_company"]["href"]
             print(company_url)
             response_company = requests.get(headers=headers, url=company_url, data=None, verify=False)
             json_data = json.loads(response_company.text)
             company_name = json_data.get("name")
             IDNameDict[companyID] = company_name
+            print(IDNameDict)
 
         return IDNameDict
 
     def getSpecificNames(response):
         companyNames = []
         for n in getIDs(response):
-            companyNames.append(IDNameDict[id])
+            companyNames.append(IDNameDict[n])
 
         return companyNames
 
@@ -127,10 +125,11 @@ def example():
             else:
                 compValueDict[companyID] = d["value"]
 
-        for id in compValueDict:
-            compValueDict[IDNameDict[id]] = compValueDict.pop(id)
+        newDict = {}
+        for id in compValueDict.keys():
+            newDict[IDNameDict[id]] = compValueDict[id]
 
-        return compValueDict
+        return newDict
 
     print(valuePerCustomer())
     #takes a dictionary of companies and uses the keys to find the company names based on the company id.
@@ -159,16 +158,6 @@ def example():
         prospectCompanies = set(prospectNames) - set(boughtThePastYear)
         return prospectCompanies
 
-
-#skulle kunna ta ner alla namn.
-
-    #print(averageValue())
-    #print(dealsPerMonth())
-    #print(valuePerCustomer())
-    #print(boughtThePastYear)
-    #print(getProspects())
-    print(getInactive())
-
     fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
 
     dealsPerMonth = dealsPerMonth()
@@ -195,13 +184,11 @@ def example():
     """
 
     if len(response_deals) > 0:
-        return render_template('example.html', response=response_deals, averageValue=averageValue(), prospects=getProspects(),
+        return render_template('example.html', averageValue=averageValue(), prospects=getProspects(),
                                customers=getCustomers(), inactives=getInactive())
     else:
         msg = 'No deals found'
         return render_template('example.html', msg=msg)
-
-
 
 # You can add more pages to your app, like this:
 @app.route('/myroute')
