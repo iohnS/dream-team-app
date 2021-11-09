@@ -95,12 +95,10 @@ def example():
         for companyID in companyIDs:
             firstMatch = next(x for x in response_all if x["company"] == companyID)
             company_url = firstMatch["_links"]["relation_company"]["href"]
-            print(company_url)
             response_company = requests.get(headers=headers, url=company_url, data=None, verify=False)
             json_data = json.loads(response_company.text)
             company_name = json_data.get("name")
             IDNameDict[companyID] = company_name
-            print(IDNameDict)
 
         return IDNameDict
 
@@ -158,21 +156,23 @@ def example():
         prospectCompanies = set(prospectNames) - set(boughtThePastYear)
         return prospectCompanies
 
-    fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
+    #Used to get the chart of the deals per month and the value per customer.
+    def getCharts():
+        dealsMonth = dealsPerMonth()
+        fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
+        ax1.bar(dealsMonth.keys(), dealsMonth.values())
+        ax1.set_title("Deals Per Month")
+        ax1.set_ylabel("Nu mber of deals")
+        ax1.set_xlabel("Month")
 
-    dealsPerMonth = dealsPerMonth()
-    ax1.bar(dealsPerMonth.keys(), dealsPerMonth.values())
-    ax1.set_title("Deals Per Month")
-    ax1.set_ylabel("Number of deals")
-    ax1.set_xlabel("Month")
+        perCustomer = valuePerCustomer()
+        ax2.bar(perCustomer.keys(), perCustomer.values())
+        ax2.set_title("Value Per Customer")
+        ax2.set_ylabel("Value in kr")
+        ax2.set_xlabel("Company")
 
-    perCustomer = valuePerCustomer()
-    ax2.bar(perCustomer.keys(), perCustomer.values())
-    ax2.set_title("Value Per Customer")
-    ax2.set_ylabel("Value in kr")
-    ax2.set_xlabel("Company")
+        fig.savefig("dealsandvalue.png")
 
-    fig.savefig("dealsandvalue.png")
 
 
 #customer o månad map,
@@ -185,7 +185,7 @@ def example():
 
     if len(response_deals) > 0:
         return render_template('example.html', averageValue=averageValue(), prospects=getProspects(),
-                               customers=getCustomers(), inactives=getInactive())
+                               customers=getCustomers(), inactives=getInactive(), months=dealsPerMonth(), valueCustomer=valuePerCustomer())
     else:
         msg = 'No deals found'
         return render_template('example.html', msg=msg)

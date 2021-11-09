@@ -42,5 +42,31 @@
 		</div>
 	</div>
 
+
+    <div class="card-group">
+		<div class="card">
+        <h5 class="card-title">  Deals per month</h5>
+		  <img style="width: 200px;">
+		  <div class="card-body">
+              {% for month, deals in months.items() %}
+                  <h5 class="card-title"> {{ month }} </h5>
+                  <p class="card-text">{{ deals }}</p>
+              {% endfor %}
+		  </div>
+		</div>
+	</div>
+
+    <div class="card-group">
+		<div class="card">
+        <h5 class="card-title">  Value per customer</h5>
+		  <img style="width: 200px;">
+		  <div class="card-body">
+              {% for customer, value in valueCustomer.items() %}
+                  <h5 class="card-title">{{ customer }}</h5>
+                  <p class="card-text">{{ value }}</p>
+              {% endfor %}
+		  </div>
+		</div>
+	</div>
 	<br>
 {% endblock %}
