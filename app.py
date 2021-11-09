@@ -88,7 +88,8 @@ def example():
     def getIDs(response):
         companyIDs = []
         for d in response:
-            companyIDs.append(d["company"])
+            if d["company"] not in companyIDs:
+                companyIDs.append(d["company"])
         return companyIDs
 
     def getAllCompanyNames():
