@@ -3,12 +3,14 @@ import requests
 import json
 import iso8601
 import calendar
-import pandas as pd
+import urllib3
 import matplotlib.pyplot as plt
 
 # Feel free to import additional libraries if you like
 
 app = Flask(__name__, static_url_path='/static')
+
+urllib3.disable_warnings()
 
 # Paste the API-key you have received as the value for "x-api-key"
 headers = {
@@ -60,10 +62,10 @@ def example():
     # Example of API call to get deals
     base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/deal/"
     #https://api-test.lime-crm.com/client/table-view/deal
-    params = "?_limit=50&probability=1.0&min-closeddate=2020-11-08T23:59Z&max-closeddate=2021-11-08T23:59Z"
+    params = "?probability=1.0&min-closeddate=2020-11-08T23:59Z&max-closeddate=2021-11-08T23:59Z"
     url = base_url + params
     response_deals = get_api_data(headers=headers, url=url)
-    #response_all = get_api_data(headers=headers, url=base_url)
+    response_all = get_api_data(headers=headers, url=base_url)
 
     def averageValue():
         totalvalue = 0
@@ -83,62 +85,81 @@ def example():
 
         return monthDict
 
-    #Skapa en dictionary för alla företag/customers mha company id.
-    #Skapar inte en dictionary för namnen för det tar för mkt tid o köra request på alla 22 (istället för 12, inga duplicates).
-    def valuePerCustomer(response):
-        companyDict = {}
+    def getIDs(response):
+        companyIDs = []
         for d in response:
-            companyID = d["company"]
-            if d["company"] in companyDict:
-                companyDict[companyID] += d["value"]
-            else:
-                companyDict[companyID] = d["value"]
+            companyIDs.append(d["company"])
+        return companyIDs
 
-    #takes a dictionary of companies and uses the keys to find the company names based on the company id.
-        customerValue = {}
-        for companyID in companyDict.keys():
-            first = next(x for x in response if x["company"] == companyID)
+    def getAllCompanyNames():
+        companyIDs = getIDs(response_all)
+        IDNameDict = {}
+        for companyID in companyIDs:
+            first = next(x for x in response_all if x["company"] == companyID)
             company_url = first["_links"]["relation_company"]["href"]
             print(company_url)
             response_company = requests.get(headers=headers, url=company_url, data=None, verify=False)
             json_data = json.loads(response_company.text)
             company_name = json_data.get("name")
-            #nameList.append(company_name)
-            customerValue[company_name] = companyDict[companyID]
+            IDNameDict[companyID] = company_name
 
-        return customerValue
+        return IDNameDict
 
-    #print(valuePerCustomer(response_deals))
+    def getSpecificNames(response):
+        companyNames = []
+        for n in getIDs(response):
+            companyNames.append(IDNameDict[id])
 
-    #Bought anything the last year => "customer" (alla som vi tar fram är customers).
-    #Never bought anything => "prospect", except if status = "notinterested"
+        return companyNames
 
-    #If bought in the past but not something the last year => "inactive"
+    #Skapa en dictionary för alla företag/customers mha company id.
+    #Skapar inte en dictionary för namnen för det tar för mkt tid o köra request på alla 22 (istället för 12, inga duplicates).
+
+    IDNameDict = getAllCompanyNames()
+
+    def valuePerCustomer():
+        compValueDict = {}
+        for d in response_deals:
+            companyID = d["company"]
+            if d["company"] in compValueDict:
+                compValueDict[companyID] += d["value"]
+            else:
+                compValueDict[companyID] = d["value"]
+
+        for id in compValueDict:
+            compValueDict[IDNameDict[id]] = compValueDict.pop(id)
+
+        return compValueDict
+
+    print(valuePerCustomer())
+    #takes a dictionary of companies and uses the keys to find the company names based on the company id.
 
     def getCustomers():
-        return valuePerCustomer(response_deals).keys()
+        return valuePerCustomer().keys()
 
     boughtThePastYear = getCustomers()
 
 
     def getInactive():
         base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/deal/"
-        params = "?_limit=50&probability=1.0&max-closeddate=2020-11-08T23:59Z"
+        params = "?probability=1.0&max-closeddate=2020-11-08T23:59Z"
         before2020URL = base_url + params
         data_until_2020 = get_api_data(headers=headers, url=before2020URL)
-        inactiveNames = valuePerCustomer(data_until_2020).keys()
+        inactiveNames = getSpecificNames(data_until_2020)
         inactiveCompanies = set(inactiveNames) - set(boughtThePastYear)
         return inactiveCompanies
 
     def getProspects():
         base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/deal/"
-        params = "?_limit=50&not-probability=1.0"
+        params = "?not-probability=1.0"
         noDealsURL = base_url + params
         no_deals_data = get_api_data(headers=headers, url=noDealsURL)
-        prospectNames = valuePerCustomer(no_deals_data).keys()
+        prospectNames = getSpecificNames(no_deals_data)
         prospectCompanies = set(prospectNames) - set(boughtThePastYear)
         return prospectCompanies
 
+
+#skulle kunna ta ner alla namn.
 
     #print(averageValue())
     #print(dealsPerMonth())
@@ -151,14 +172,12 @@ def example():
 
     dealsPerMonth = dealsPerMonth()
     ax1.bar(dealsPerMonth.keys(), dealsPerMonth.values())
-    ax1.legend()
     ax1.set_title("Deals Per Month")
     ax1.set_ylabel("Number of deals")
     ax1.set_xlabel("Month")
 
-    valuePerCustomer = valuePerCustomer(response_deals)
-    ax2.bar(valuePerCustomer.keys(), valuePerCustomer.values())
-    ax2.legend()
+    perCustomer = valuePerCustomer()
+    ax2.bar(perCustomer.keys(), perCustomer.values())
     ax2.set_title("Value Per Customer")
     ax2.set_ylabel("Value in kr")
     ax2.set_xlabel("Company")
@@ -175,7 +194,7 @@ def example():
     """
 
     if len(response_deals) > 0:
-        return render_template('example.html', averageValue=averageValue(), prospects=getProspects(),
+        return render_template('example.html', response=response_deals, averageValue=averageValue(), prospects=getProspects(),
                                customers=getCustomers(), inactives=getInactive())
     else:
         msg = 'No deals found'
